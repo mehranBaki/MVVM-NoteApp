@@ -21,7 +21,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    //Binding
+    // BINDING
     private var _binding: ActivityMainBinding? = null
     private val binding get() = _binding
 
@@ -31,33 +31,32 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var noteEntity: NoteEntity
 
-    //Other
+    // OTHER
     private val viewModel: MainViewModel by viewModels()
     private var selectedItem = 0
     private var isFiltered = false
     private var filteredItem = ""
 
-    //Jobs
-    private var allNoteJob: Job? = null
+    // JOBS
     private var searchJob: Job? = null
     private var filterJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        //For day mode theme only
+        // FOR DAY MODE THEME ONLY
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         super.onCreate(savedInstanceState)
         _binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding?.root)
-        //Init Views
+        // INIT VIEWS
         binding?.apply {
-            //support toolbar
+            // SUPPORT TOOLBAR
             setSupportActionBar(notesToolbar)
-            //Note Fragment
+            // NOTE FRAGMENT
             addNoteBtn.setOnClickListener {
                 NoteFragment().show(supportFragmentManager, NoteFragment().tag)
             }
-            //Get All data
-            allNoteJob = viewModel.getAllNote()
+            // GET ALL DATA
+            viewModel.getAllNote()
             viewModel.notesData.observe(this@MainActivity) {
                 if (isFiltered) {
                     filterJob = viewModel.getFilterNote(filteredItem)
@@ -71,7 +70,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            //search observation
+            // SEARCH OBSERVATION
             viewModel.searchData.observe(this@MainActivity) {
                 showEmpty(it.isEmpty)
                 notesAdapter.setData(it.data!!)
@@ -81,13 +80,13 @@ class MainActivity : AppCompatActivity() {
                     adapter = notesAdapter
                 }
             }
-            //canceling the search coroutine
+            // CANCELING THE SEARCH COROUTINE
             viewModel.isSearch.observe(this@MainActivity) {
                 if (!it) {
                     searchJob?.cancel()
                 }
             }
-            //filter observation
+            // FILTER OBSERVATION
             viewModel.filterData.observe(this@MainActivity) {
                 showEmpty(it.isEmpty)
                 notesAdapter.setData(it.data!!)
@@ -97,13 +96,13 @@ class MainActivity : AppCompatActivity() {
                     adapter = notesAdapter
                 }
             }
-            //canceling the Filter coroutine
+            // CANCELING THE FILTER COROUTINE
             viewModel.isFilter.observe(this@MainActivity) {
                 if (!it) {
                     filterJob?.cancel()
                 }
             }
-            //Filter
+            // FILTER
             notesToolbar.setOnMenuItemClickListener {
                 when (it.itemId) {
                     R.id.actionFilter -> {
@@ -115,7 +114,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            //Note's menu clicks
+            // NOTE'S MENU CLICKS
             notesAdapter.setOnItemClickListener { entity, type ->
                 when (type) {
                     EDIT -> {
@@ -158,7 +157,7 @@ class MainActivity : AppCompatActivity() {
             when (item) {
                 0 -> {
                     isFiltered = false
-                    allNoteJob = viewModel.getAllNote()
+                    viewModel.getAllNote()
                 }
                 in 1..3 -> {
                     isFiltered = true
@@ -206,7 +205,6 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
-        allNoteJob?.cancel()
         searchJob?.cancel()
         filterJob?.cancel()
     }

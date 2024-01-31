@@ -10,6 +10,8 @@ import ir.baky.mvvm_noteapp.data.model.NoteEntity
 import ir.baky.mvvm_noteapp.data.repository.MainRepository
 import ir.baky.mvvm_noteapp.utils.DataStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,13 +33,22 @@ class MainViewModel @Inject constructor(private val repository: MainRepository) 
     private var _isFilter: MutableLiveData<Boolean> = MutableLiveData()
     val isFilter = _isFilter
 
-    fun getAllNote() = viewModelScope.launch(Dispatchers.IO) {
-        repository.allNotes().collect {
-            _notesData.postValue(DataStatus.success(it, it.isEmpty()))
-            Log.e("LOG:", "MainViewModel-getAllNote")
+    private var allNoteJob: Job? = null
+
+    /** GETTING ALL THE NOTES*/
+    fun getAllNote() {
+        allNoteJob?.cancel()
+        allNoteJob = viewModelScope.launch(Dispatchers.IO) {
+            repository.allNotes()
+                .distinctUntilChanged()
+                .collect {
+                    _notesData.postValue(DataStatus.success(it, it.isEmpty()))
+                    Log.e("LOG:", "MainViewModel-getAllNote")
+                }
         }
     }
 
+    /** SEARCH FUNCTION */
     fun getSearchNote(search: String) = viewModelScope.launch(Dispatchers.IO) {
         _isSearch.postValue(true)
         repository.searchNotes(search).collect {
@@ -47,6 +58,7 @@ class MainViewModel @Inject constructor(private val repository: MainRepository) 
         }
     }
 
+    /** FILTER NOTES */
     fun getFilterNote(filter: String) = viewModelScope.launch(Dispatchers.IO) {
         _isFilter.postValue(true)
         repository.filterNotes(filter).collect {
@@ -56,17 +68,19 @@ class MainViewModel @Inject constructor(private val repository: MainRepository) 
         }
     }
 
+    /** DELETE FUNCTION */
     fun deleteNote(entity: NoteEntity) = viewModelScope.launch(Dispatchers.IO) {
         repository.deleteNote(entity)
         Log.e("LOG:", "MainViewModel-deleteNote")
     }
 
+    /** SEARCH NOTE CONSIDERING THE PRIORITY*/
     fun getSearchNoteWithPriority(search: String, filter: String) = viewModelScope.launch(Dispatchers.IO) {
-            _isSearch.postValue(true)
-            repository.searchNotesWithPriority(search, filter).collect {
-                _searchData.postValue(DataStatus.success(it, it.isEmpty()))
-                Log.e("LOG:", "MainViewModel-getSearchNoteWithPriority")
-                _isSearch.postValue(false)
-            }
+        _isSearch.postValue(true)
+        repository.searchNotesWithPriority(search, filter).collect {
+            _searchData.postValue(DataStatus.success(it, it.isEmpty()))
+            Log.e("LOG:", "MainViewModel-getSearchNoteWithPriority")
+            _isSearch.postValue(false)
         }
+    }
 }
